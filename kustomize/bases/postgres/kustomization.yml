@@ -1,0 +1,4 @@
+generators:
+- chart.yml
+generatorOptions:
+  disableNameSuffixHash: true

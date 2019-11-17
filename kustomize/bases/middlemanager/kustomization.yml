@@ -1,0 +1,7 @@
+resources:
+- statefulset.yml
+configMapGenerator:
+- name: middlemanager
+  files:
+  - supervise.conf
+  - main.config

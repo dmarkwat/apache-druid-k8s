@@ -1,0 +1,67 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: historical
+  labels:
+    app: historical
+spec:
+  ports:
+  - port: 8083
+    name: historical
+  selector:
+    app: historical
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: historical-headless
+  labels:
+    app: historical
+spec:
+  clusterIP: None
+  ports:
+  - port: 8083
+    name: historical
+  selector:
+    app: historical
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: historical
+spec:
+  selector:
+    matchLabels:
+      app: historical
+  serviceName: historical-headless
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: OrderedReady
+  template:
+    metadata:
+      labels:
+        app: historical
+    spec:
+      containers:
+      - name: service
+        image: apache/druid
+        resources:
+          requests:
+            memory: 2G
+            cpu: 750m
+        args:
+        - -c
+        - /druid/conf/mounted/service/historical/supervise.conf
+        - --stdout
+        ports:
+        - name: historical
+          containerPort: 8083
+        volumeMounts:
+        - name: service
+          mountPath: /druid/conf/mounted/service/historical
+      volumes:
+      - name: service
+        configMap:
+          name: historical

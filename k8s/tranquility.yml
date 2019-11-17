@@ -1,0 +1,77 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tranquility
+data:
+  supervise.conf: |
+
+  runtime.properties: |
+
+  jvm.config: |
+
+  main.config: |
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coordinator
+  labels:
+    app: tranquility
+spec:
+  ports:
+  - port: 8081
+    name: client
+  selector:
+    app: tranquility
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: tranquility
+spec:
+  selector:
+    matchLabels:
+      app: tranquility
+  serviceName: tranquility
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: OrderedReady
+  template:
+    metadata:
+      labels:
+        app: tranquility
+    spec:
+      containers:
+      - name: coordinator
+        imagePullPolicy: Never
+        image: dmarkwat.io/apache/druid
+        resources:
+          requests:
+            memory: 512m
+            cpu: 1000m
+        args:
+        - -c
+        - /druid/conf/mounted/service/tranquility/supervise.conf
+        - --stdout
+        ports:
+        - name: coordinator
+          containerPort: 8081
+        - name: overlord
+          containerPort: 8090
+        - name: derby
+          containerPort: 1527
+        volumeMounts:
+        - name: common
+          mountPath: /druid/conf/mounted/service/_common
+        - name: service
+          mountPath: /druid/conf/mounted/service/tranquility
+      volumes:
+      - name: common
+        configMap:
+          name: common
+      - name: service
+        configMap:
+          name: tranquility

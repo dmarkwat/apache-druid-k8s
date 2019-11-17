@@ -1,0 +1,67 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: broker
+  labels:
+    app: broker
+spec:
+  ports:
+  - port: 8082
+    name: broker
+  selector:
+    app: broker
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: broker-headless
+  labels:
+    app: broker
+spec:
+  clusterIP: None
+  ports:
+  - port: 8082
+    name: broker
+  selector:
+    app: broker
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: broker
+spec:
+  selector:
+    matchLabels:
+      app: broker
+  serviceName: broker-headless
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: OrderedReady
+  template:
+    metadata:
+      labels:
+        app: broker
+    spec:
+      containers:
+      - name: service
+        image: apache/druid
+        resources:
+          requests:
+            memory: 1G
+            cpu: 750m
+        args:
+        - -c
+        - /druid/conf/mounted/service/broker/supervise.conf
+        - --stdout
+        ports:
+        - name: broker
+          containerPort: 8082
+        volumeMounts:
+        - name: service
+          mountPath: /druid/conf/mounted/service/broker
+      volumes:
+      - name: service
+        configMap:
+          name: broker

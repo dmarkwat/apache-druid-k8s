@@ -1,0 +1,8 @@
+resources:
+- ../../bases/middlemanager
+configMapGenerator:
+- name: middlemanager
+  behavior: merge
+  files:
+  - jvm.config
+  - runtime.properties

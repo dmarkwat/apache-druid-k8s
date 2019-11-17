@@ -1,0 +1,8 @@
+resources:
+- ../../bases/historical
+configMapGenerator:
+- name: historical
+  behavior: merge
+  files:
+  - jvm.config
+  - runtime.properties

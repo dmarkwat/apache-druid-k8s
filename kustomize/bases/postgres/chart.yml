@@ -1,0 +1,9 @@
+apiVersion: dmarkwat.io/v1
+kind: ChartInflator
+metadata:
+  name: _
+releaseName: druid
+chartRelease: stable/postgresql
+values:
+  serviceAccount:
+    enabled: true

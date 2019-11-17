@@ -1,0 +1,12 @@
+---
+- op: add
+  path: /spec/template/spec/containers/0/volumeMounts/-
+  value:
+    name: common
+    mountPath: /druid/conf/mounted/service/_common
+- op: add
+  path: /spec/template/spec/volumes/-
+  value:
+    name: common
+    configMap:
+      name: common

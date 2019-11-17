@@ -1,0 +1,67 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: middlemanager
+  labels:
+    app: middlemanager
+spec:
+  ports:
+  - port: 8091
+    name: middlemanager
+  selector:
+    app: middlemanager
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: middlemanager-headless
+  labels:
+    app: middlemanager
+spec:
+  clusterIP: None
+  ports:
+  - port: 8091
+    name: middlemanager
+  selector:
+    app: middlemanager
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: middlemanager
+spec:
+  selector:
+    matchLabels:
+      app: middlemanager
+  serviceName: middlemanager-headless
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: OrderedReady
+  template:
+    metadata:
+      labels:
+        app: middlemanager
+    spec:
+      containers:
+      - name: service
+        image: apache/druid
+        resources:
+          requests:
+            memory: 4G
+            cpu: 2000m
+        args:
+        - -c
+        - /druid/conf/mounted/service/middleManager/supervise.conf
+        - --stdout
+        ports:
+        - name: middlemanager
+          containerPort: 8091
+        volumeMounts:
+        - name: service
+          mountPath: /druid/conf/mounted/service/middleManager
+      volumes:
+      - name: service
+        configMap:
+          name: middlemanager

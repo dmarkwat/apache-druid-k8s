@@ -1,0 +1,10 @@
+namespace: druid
+bases:
+- namespace.yml
+- zookeeper.yml
+- common.yml
+- master.yml
+- middlemanager.yml
+- historical.yml
+- broker.yml
+- router.yml

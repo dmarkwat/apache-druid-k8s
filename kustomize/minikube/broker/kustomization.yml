@@ -1,0 +1,8 @@
+resources:
+- ../../bases/broker
+configMapGenerator:
+- name: broker
+  behavior: merge
+  files:
+  - jvm.config
+  - runtime.properties

@@ -1,0 +1,7 @@
+resources:
+- statefulset.yml
+configMapGenerator:
+- name: coordinator
+  files:
+  - supervise.conf
+  - main.config

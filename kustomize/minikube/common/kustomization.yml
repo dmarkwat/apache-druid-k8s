@@ -1,0 +1,9 @@
+resources:
+- ../../bases/common
+- volumes.yml
+configMapGenerator:
+- name: common
+  behavior: merge
+  files:
+  - common.runtime.properties
+  - log4j2.xml

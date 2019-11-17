@@ -1,0 +1,134 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: broker
+data:
+  supervise.conf: |
+    :verify bin/verify-java
+
+    broker bin/run-druid broker conf/mounted/service
+
+  runtime.properties: |
+    druid.service=druid/broker
+    druid.plaintextPort=8082
+
+    # HTTP server settings
+    druid.server.http.numThreads=12
+
+    # HTTP client settings
+    druid.broker.http.numConnections=10
+    druid.broker.http.maxQueuedBytes=5000000
+
+    # Processing threads and buffers
+    druid.processing.buffer.sizeBytes=100000000
+    druid.processing.numMergeBuffers=2
+    druid.processing.numThreads=1
+    druid.processing.tmpDir=/var/druid/processing
+
+    # Query cache disabled -- push down caching and merging instead
+    druid.broker.cache.useCache=false
+    druid.broker.cache.populateCache=false
+
+  jvm.config: |
+    -server
+    -XX:+UnlockExperimentalVMOptions
+    -XX:MaxRAMPercentage=0.5
+    -XX:MaxDirectMemorySize=768m
+    -XX:+ExitOnOutOfMemoryError
+    -XX:+UseG1GC
+    -Duser.timezone=UTC
+    -Dfile.encoding=UTF-8
+    -Djava.io.tmpdir=var/tmp
+    -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager
+
+  main.config: |
+    org.apache.druid.cli.Main server broker
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: broker
+  labels:
+    app: broker
+spec:
+  ports:
+  - port: 8082
+    name: broker
+  selector:
+    app: broker
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: broker-headless
+  labels:
+    app: broker
+spec:
+  clusterIP: None
+  ports:
+  - port: 8082
+    name: broker
+  selector:
+    app: broker
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: broker
+spec:
+  selector:
+    matchLabels:
+      app: broker
+  serviceName: broker-headless
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: OrderedReady
+  template:
+    metadata:
+      labels:
+        app: broker
+    spec:
+      containers:
+      - name: broker
+        imagePullPolicy: Never
+        image: dmarkwat.io/apache/druid
+        resources:
+          requests:
+            memory: 1G
+            cpu: 750m
+        args:
+        - -c
+        - /druid/conf/mounted/service/broker/supervise.conf
+        - --stdout
+        ports:
+        - name: broker
+          containerPort: 8082
+        volumeMounts:
+        - name: common
+          mountPath: /druid/conf/mounted/service/_common
+        - name: service
+          mountPath: /druid/conf/mounted/service/broker
+        - name: druiddata
+          mountPath: /var/druid
+      volumes:
+      - name: common
+        configMap:
+          name: common
+      - name: service
+        configMap:
+          name: broker
+      - name: druiddata
+        persistentVolumeClaim:
+          claimName: shared
+  # volumeClaimTemplates:
+  # - metadata:
+  #     name: druiddata
+  #   spec:
+  #     accessModes: ["ReadWriteMany"]
+  #     volumeName: shared
+  #     resources:
+  #       requests:
+  #         storage: 1Gi

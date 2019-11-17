@@ -1,0 +1,25 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zk
+spec:
+  template:
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - zk
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: kubernetes-zookeeper
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "0.5"
+# also will want volume claim template & mount

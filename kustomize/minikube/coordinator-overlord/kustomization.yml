@@ -1,0 +1,9 @@
+resources:
+- ../../bases/coordinator-overlord
+- service.yml
+configMapGenerator:
+- name: coordinator
+  behavior: merge
+  files:
+  - jvm.config
+  - runtime.properties

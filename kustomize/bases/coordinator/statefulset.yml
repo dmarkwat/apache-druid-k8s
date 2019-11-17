@@ -1,0 +1,67 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coordinator
+  labels:
+    app: coordinator
+spec:
+  ports:
+  - port: 8081
+    name: client
+  selector:
+    app: coordinator
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coordinator-headless
+  labels:
+    app: coordinator
+spec:
+  clusterIP: None
+  ports:
+  - port: 8081
+    name: coordinator
+  selector:
+    app: coordinator
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: coordinator
+spec:
+  selector:
+    matchLabels:
+      app: coordinator
+  serviceName: coordinator-headless
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: OrderedReady
+  template:
+    metadata:
+      labels:
+        app: coordinator
+    spec:
+      containers:
+      - name: service
+        image: apache/druid
+        args:
+        - -c
+        - /druid/conf/mounted/service/coordinator/supervise.conf
+        - --stdout
+        resources:
+          requests:
+            memory: 512m
+            cpu: 750m
+        ports:
+        - name: coordinator
+          containerPort: 8081
+        volumeMounts:
+        - name: service
+          mountPath: /druid/conf/mounted/service/coordinator
+      volumes:
+      - name: service
+        configMap:
+          name: coordinator

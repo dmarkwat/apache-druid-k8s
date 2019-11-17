@@ -1,0 +1,173 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coordinator-overlord
+data:
+  supervise.conf: |
+    :verify bin/verify-java
+
+    coordinator-overlord bin/run-druid coordinator-overlord conf/mounted/service
+
+  runtime.properties: |
+    druid.service=druid/coordinator
+    druid.plaintextPort=8081
+
+    druid.coordinator.startDelay=PT10S
+    druid.coordinator.period=PT5S
+
+    # Run the overlord service in the coordinator process
+    druid.coordinator.asOverlord.enabled=true
+    druid.coordinator.asOverlord.overlordService=druid/overlord
+
+    druid.indexer.queue.startDelay=PT5S
+
+    druid.indexer.runner.type=remote
+    druid.indexer.storage.type=metadata
+
+  jvm.config: |
+    -server
+    -XX:+UnlockExperimentalVMOptions
+    -XX:MaxRAMPercentage=0.9
+    -XX:+ExitOnOutOfMemoryError
+    -XX:+UseG1GC
+    -Duser.timezone=UTC
+    -Dfile.encoding=UTF-8
+    -Djava.io.tmpdir=var/tmp
+    -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager
+    -Dderby.stream.error.file=var/druid/derby.log
+
+  main.config: |
+    org.apache.druid.cli.Main server coordinator
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coordinator
+  labels:
+    app: coordinator-overlord
+spec:
+  ports:
+  - port: 8081
+    name: client
+  selector:
+    app: coordinator-overlord
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: overlord
+  labels:
+    app: coordinator-overlord
+spec:
+  ports:
+  - port: 8090
+    name: client
+  selector:
+    app: coordinator-overlord
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metadata
+  labels:
+    app: coordinator-overlord
+spec:
+  ports:
+  - port: 1527
+    name: derby
+  selector:
+    app: coordinator-overlord
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coordinator-headless
+  labels:
+    app: coordinator-overlord
+spec:
+  clusterIP: None
+  ports:
+  - port: 8081
+    name: coordinator
+  selector:
+    app: coordinator-overlord
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: coordinator-overlord
+spec:
+  selector:
+    matchLabels:
+      app: coordinator-overlord
+  serviceName: coordinator-headless
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: OrderedReady
+  template:
+    metadata:
+      labels:
+        app: coordinator-overlord
+    spec:
+      containers:
+      - name: coordinator
+        imagePullPolicy: Never
+        image: dmarkwat.io/apache/druid
+        resources:
+          requests:
+            memory: 512m
+            cpu: 750m
+        args:
+        - -c
+        - /druid/conf/mounted/service/coordinator-overlord/supervise.conf
+        - --stdout
+        ports:
+        - name: coordinator
+          containerPort: 8081
+        - name: overlord
+          containerPort: 8090
+        - name: derby
+          containerPort: 1527
+        volumeMounts:
+        - name: common
+          mountPath: /druid/conf/mounted/service/_common
+        - name: service
+          mountPath: /druid/conf/mounted/service/coordinator-overlord
+        - name: druiddata
+          mountPath: /var/druid
+      volumes:
+      - name: common
+        configMap:
+          name: common
+      - name: service
+        configMap:
+          name: coordinator-overlord
+      - name: druiddata
+        persistentVolumeClaim:
+          claimName: shared
+  # volumeClaimTemplates:
+  # - metadata:
+  #     name: druiddata
+  #   spec:
+  #     accessModes: ["ReadWriteMany"]
+  #     volumeName: shared
+  #     resources:
+  #       requests:
+  #         storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coordinator-lb
+  labels:
+    app: coordinator-overlord
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 8081
+    name: coordinator
+  selector:
+    app: coordinator-overlord

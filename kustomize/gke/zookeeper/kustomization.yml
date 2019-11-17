@@ -1,0 +1,4 @@
+resources:
+- ../../bases/zookeeper
+patchesStrategicMerge:
+- patch.yml

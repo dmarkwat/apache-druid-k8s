@@ -1,0 +1,5 @@
+configMapGenerator:
+- name: common
+  literals:
+    - common.runtime.properties=
+    - log4j2.xml=

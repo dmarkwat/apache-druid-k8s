@@ -1,0 +1,5 @@
+resources:
+- ../coordinator
+- overlord.yml
+patchesStrategicMerge:
+- patch.yml

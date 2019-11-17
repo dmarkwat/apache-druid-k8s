@@ -1,0 +1,12 @@
+---
+- op: add
+  path: /spec/template/spec/containers/0/volumeMounts/-
+  value:
+    name: druiddata
+    mountPath: /var/druid
+- op: add
+  path: /spec/template/spec/volumes/-
+  value:
+    name: druiddata
+    persistentVolumeClaim:
+      claimName: shared
