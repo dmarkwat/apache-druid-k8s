@@ -10,3 +10,20 @@
     name: common
     configMap:
       name: common
+- op: add
+  path: /spec/template/spec/containers/0/env
+  value: []
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    # there's an issue in the perl script for checking java version: it uses /bin/sh and tries to `source` which sh simply can't do
+    name: DRUID_SKIP_JAVA_CHECK
+    value: "1"
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: METADATA_STORAGE_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: druid-metadata-storage
+        key: password

@@ -1,0 +1,58 @@
+---
+apiVersion: sql.cnrm.cloud.google.com/v1beta1
+kind: SQLInstance
+metadata:
+  name: druid-metadata
+  annotations:
+    cnrm.cloud.google.com/deletion-policy: abandon
+spec:
+  databaseVersion: POSTGRES_11
+  instanceType: CLOUD_SQL_INSTANCE
+  backendType: SECOND_GEN
+  region: us-central1
+  ipAddresses:
+  - type: PRIVATE
+    ipAddress: 10.128.255.255
+  settings:
+    tier: db-custom-1-3840
+    storageAutoResize: true
+    availabilityType: REGIONAL
+    locationPreference:
+      zone: us-central1-c
+    rootPassword:
+      valueFrom:
+        secretKeyRef:
+          name: druid-metadata-storage
+          key: rootPassword
+    dataDiskType: PD_SSD
+    ipConfiguration:
+      privateNetwork: /projects/gcpProject/global/networks/networkName
+      requireSsl: true
+    backupConfiguration:
+      enabled: true
+      binaryLogEnabled: true
+      location: us-central1-a
+---
+apiVersion: sql.cnrm.cloud.google.com/v1beta1
+kind: SQLDatabase
+metadata:
+  name: druid-metadata
+spec:
+  charset: utf8mb4
+  collation: utf8mb4_bin
+  instanceRef:
+    name: druid-metadata
+---
+apiVersion: sql.cnrm.cloud.google.com/v1beta1
+kind: SQLUser
+metadata:
+  name: druid-metadata
+spec:
+  instanceRef:
+    name: druid-metadata
+  host: "%"
+  password:
+    valueFrom:
+      secretKeyRef:
+        name: druid-metadata-storage
+        key: druidPassword

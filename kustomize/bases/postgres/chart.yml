@@ -1,9 +1,15 @@
-apiVersion: dmarkwat.io/v1
-kind: ChartInflator
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
 metadata:
-  name: _
-releaseName: druid
-chartRelease: stable/postgresql
-values:
-  serviceAccount:
-    enabled: true
+  name: druid
+spec:
+  chart:
+    repository: https://kubernetes-charts.storage.googleapis.com
+    name: postgresql
+    version: 8.4.0
+  values:
+    postgresqlUsername: postgres
+    postgresqlPassword: postgres
+    postgresqlDatabase: druid
+    serviceAccount:
+      enabled: true

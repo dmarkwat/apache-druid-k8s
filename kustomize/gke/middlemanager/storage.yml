@@ -1,0 +1,25 @@
+apiVersion: storage.cnrm.cloud.google.com/v1beta1
+kind: StorageBucket
+metadata:
+  name: druid-storage
+  annotations:
+    cnrm.cloud.google.com/deletion-policy: abandon
+spec:
+  location: us-central1
+  iamConfiguration:
+    uniformBucketLevelAccess: true
+  versioning:
+    enabled: true
+---
+apiVersion: storage.cnrm.cloud.google.com/v1beta1
+kind: StorageBucket
+metadata:
+  name: druid-indexer
+  annotations:
+    cnrm.cloud.google.com/deletion-policy: abandon
+spec:
+  location: us-central1
+  iamConfiguration:
+    uniformBucketLevelAccess: true
+  versioning:
+    enabled: true

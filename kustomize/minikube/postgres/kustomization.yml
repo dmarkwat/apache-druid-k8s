@@ -1,3 +1,4 @@
 resources:
 - ../../bases/postgres
 - service.yml
+- secret.yml

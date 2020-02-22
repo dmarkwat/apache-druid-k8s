@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -e
+
+function extract() {
+    cat "$1" | yq r -j - | jq -r "$2" -
+}
+
+CHART_REPO=`extract $1 .spec.chart.repository`
+CHART_NAME=`extract $1 .spec.chart.name`
+CHART_VERSION=`extract $1 .spec.chart.version`
+
+NAME=`extract $1 .metadata.name`
+
+extract $1 .spec.values | helm template -f - $NAME $CHART_REPO/$CHART_NAME-$CHART_VERSION.tgz

@@ -22,3 +22,6 @@ patches:
     kind: StatefulSet
     labelSelector: app notin (zk,postgresql)
   path: common_config.yml
+images:
+- name: apache/druid
+  newTag: latest
