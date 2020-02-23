@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coordinator-lb
+  labels:
+    app: coordinator
+  annotations:
+    cloud.google.com/load-balancer-type: "Internal"
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 8081
+    name: coordinator
+  selector:
+    app: coordinator

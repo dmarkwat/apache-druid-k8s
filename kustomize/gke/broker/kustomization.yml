@@ -1,10 +1,9 @@
 resources:
-- ../../bases/middlemanager
-- storage.yml
+- ../../bases/broker
 patchesStrategicMerge:
 - patch.yml
 configMapGenerator:
-- name: middlemanager
+- name: broker
   behavior: merge
   files:
   - jvm.config

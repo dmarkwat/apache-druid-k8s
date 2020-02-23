@@ -1,10 +1,10 @@
 resources:
-- ../../bases/middlemanager
-- storage.yml
+- ../../bases/coordinator-overlord
+- service.yml
 patchesStrategicMerge:
 - patch.yml
 configMapGenerator:
-- name: middlemanager
+- name: coordinator
   behavior: merge
   files:
   - jvm.config

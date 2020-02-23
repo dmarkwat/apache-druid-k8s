@@ -1,0 +1,22 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: coordinator
+spec:
+  template:
+    spec:
+      containers:
+      - name: service
+        resources:
+          requests:
+            memory: 1024m
+            cpu: 1500m
+  volumeClaimTemplates:
+  - metadata:
+      name: druiddata
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Gi

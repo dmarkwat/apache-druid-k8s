@@ -1,0 +1,9 @@
+resources:
+- ../../bases/router
+- service.yml
+configMapGenerator:
+- name: router
+  behavior: merge
+  files:
+  - jvm.config
+  - runtime.properties

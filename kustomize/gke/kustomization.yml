@@ -1,0 +1,27 @@
+namespace: druid
+resources:
+- namespace.yml
+- zookeeper
+- postgres
+- common
+- coordinator-overlord
+- historical
+- middlemanager
+- broker
+- router
+patches:
+- target:
+    kind: StatefulSet
+    labelSelector: app notin (zk,postgresql)
+  path: image_policy.yml
+- target:
+    kind: StatefulSet
+    labelSelector: app notin (zk,postgresql)
+  path: shared_volume.yml
+- target:
+    kind: StatefulSet
+    labelSelector: app notin (zk,postgresql)
+  path: common_config.yml
+images:
+- name: apache/druid
+  newTag: latest
