@@ -1,0 +1,10 @@
+- op: add
+  path: /spec/template/spec/containers/-
+  value:
+    name: exporter
+    image: wikimedia/druid_exporter
+    args: ["-d"]
+    ports:
+    - name: http-exporter
+      containerPort: 8000
+      protocol: TCP

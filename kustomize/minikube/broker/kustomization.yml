@@ -1,5 +1,6 @@
 resources:
 - ../../bases/broker
+- service.yml
 configMapGenerator:
 - name: broker
   behavior: merge
