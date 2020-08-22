@@ -22,6 +22,11 @@
 - op: add
   path: /spec/template/spec/containers/0/env/-
   value:
+    name: DRUID_CONFIG_COMMON
+    value: /druid/conf/mounted/service/_common/common.runtime.properties
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
     name: METADATA_STORAGE_PASSWORD
     valueFrom:
       secretKeyRef:

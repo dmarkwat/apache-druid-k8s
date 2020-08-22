@@ -3,4 +3,4 @@ kind: ServiceAccount
 metadata:
   name: druid
   annotations:
-    iam.gke.io/gcp-service-account: druid@myproject.iam.gserviceaccount.com
+    iam.gke.io/gcp-service-account: druid@change-me.iam.gserviceaccount.com

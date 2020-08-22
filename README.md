@@ -1,3 +1,12 @@
+# Druid on Kubernetes
+
+- [Get Started with Minikube](#get-started-with-minikube)
+  * [Test drive the cluster](#test-drive-the-cluster)
+- [Get Serious with GKE](#get-serious-with-gke)
+  * [Build and prepare](#build-and-prepare)
+  * [Deploy](#deploy)
+  * [Common issues](#common-issues)
+
 ## Get Started with Minikube
 
 To get started with Minikube, a fairly large VM is required; run:
@@ -36,6 +45,8 @@ And plug it into your browser.
 Presto!
 You're ready to start hacking away with a full-blown Druid cluster.
 
+### Test drive the cluster
+
 Check out their [getting started](https://github.com/apache/druid/#getting-started) section to see some quick hits and their [tutorials](https://druid.apache.org/docs/latest/tutorials/tutorial-batch.html) for more in depth information.
 The easiest and my personal favorite to sanity check the cluster health is to do the following:
 - With the browser page on the Druid console
@@ -54,3 +65,83 @@ The query tab should be entirely functional and ready to rock with whatever powe
 Happy Druid-ing(?)!
 
 ## Get Serious with GKE
+
+*This was sadly tested some time ago on an older version of druid, and while the manifests and kustomizations should be in line with minikube, some breakage may be encountered.*
+
+So you wanna do this for real, huh?
+
+Well you asked for it; +prepare for the worst because+...nah it's pretty easy.
+But that said there are definitely some requirements up front (and one recommendation):
+1. [Config Connector](https://cloud.google.com/config-connector/docs/how-to/install-upgrade-uninstall) is deployed in the cluster and has the appropriate permissions to manage Cloud SQL Instances and GCS Buckets
+  - (unless Config Connector has evolved since I last encountered this, I _strongly_ recommend using a curated IAM Role and not simply giving the Config Connector blanket admin access to the project; however, your situation may allow for such configurations)
+1. [Workload Identity](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity) is enabled and there's a [binding](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#creating_a_relationship_between_ksas_and_gsas) for the IAM Service Account and the K8s Service Account
+1. A private network serice access range is configured; information about postgres' needs can be found [here](https://cloud.google.com/sql/docs/postgres/private-ip). This is however, only required because the `SqlInstance` is configured as such and can be changed easily; see [the doc](https://cloud.google.com/config-connector/docs/reference/resource-docs/sql/sqlinstance)
+
+How these are deployed is entirely up to you, but they are required for the given kustomization in this repo.
+To untangle any of that, one simply needs to (either or both if Config Connector or Workload Identity aren't in use):
+- Create the Postgres instance manually or via API and remove the `SqlInstance` and other config connector resource references from the gke kustomization
+- Use a generated GCP Service Account JSON key and a K8s secret with env var wiring for `GOOGLE_APPLICATION_CREDENTIALS` in all the workloads that talk to the indexing and logging backends (kind of all of them except maybe the router?)
+
+Recommendation:
+- The GKE cluster this was deployed to and tested against is a Private Cluster which means nearly-zero wire connectivity to and from the outside world. I'm a personal advocate of private clusters, but it's not strictly required here. However, to get access to the deployed instances and LBs (they should all be Internal L4 LBs), you will need to find your way onto a network with visibility to either the Service IP alias range (a VPC peered with the GKE VPC) or the k8s master (the GKE VPC itself).
+
+And with that out of the way we're ready to get started!
+
+### Build and prepare
+
+Build and push the docker image for the druid exporter:
+```bash
+# update with whatever docker repo of your choosing
+TAG=gcr.io/my-project-here/druid-exporter:latest
+
+# must specify the tag for any push to be meaningful
+make build TAG=$TAG
+
+# up, up, and away with the image
+docker push $TAG
+```
+
+Find all the things that need changing:
+```bash
+grep -R 'change-me' kustomize/gke
+```
+This is a super low tech way to find everything that needs to change, but `kustomize` has somewhat limited variable plugging (when last I used it anyway).
+Among the `change-me`s you'll find are things like:
+- postgres IP addresses
+- passwords that suuuuper should be changed
+- workload identity project name
+- GCS bucket names
+- druid exporter name and digest
+
+There should hopefully be enough context or comments inline to aid with the values these should be set to.
+And bear in mind this is only a few of the required elements; things like JVM tuning, etc. can be found in various `jvm.config` or other files.
+
+Lastly, don't forget the IAM bindings.
+While the `SqlInstance` and `StorageBucket`s are all in here, the IAM configurations are not!
+So don't forget to update IAM accordingly for the workload-identity-bound GCP SA.
+Yes, there is definitely some chicken-egg silliness going on here and so you will likely need to apply these configurations _and then_ apply the IAM bindings.
+But, you can also add the necessary IAM bindings using Config Connector CRs...however, I personally have avoided allowing Config Connector to manage IAM policies; but you decide!
+
+### Deploy
+
+Once that's all set, we simply run:
+```bash
+# this assumes there's wire access to the k8s master--sshuttle, vpn, etc.
+# and also that the kube context is configured for the correct cluster
+
+make gke
+```
+
+Within about 5-several minutes everything should come online.
+Cloud SQL is likely to be the slowest part of this process and since many components depend on it, it's possible you will see crash-looping until it comes online.
+
+If there are no issues then you're ready to [test drive the cluster](#test-drive-the-cluster)!
+
+Happy Druid-ing(?)!
+
+### Common issues
+
+I could spend hours documenting these, but sadly I won't here; so to just to give some quick hits:
+- Cloud SQL IP ACLs and network connectivity between the private service access range and the GKE VPC are misconfigured
+- Workload identity is misconfigured; however, containers making use of workload identity often fail on the first one or few starts because the gke metadata server backing WI is--as far as I understand it and have observed--an eventually consistent system. So don't let the first auth-related failure fool you!
+- IAM on the GCP service account is misconfigured; it needs access to whatever buckets you create

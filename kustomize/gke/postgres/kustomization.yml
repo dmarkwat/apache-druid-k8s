@@ -1,3 +1,8 @@
 resources:
 - instance.yml
-- secret.yml
+
+secretGenerator:
+- name: druid-metadata-storage
+  literals:
+  - rootPassword=fortheloveofk8schange-me
+  - druidPassword=fortheloveofk8schange-metoo

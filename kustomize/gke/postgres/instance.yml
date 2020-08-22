@@ -12,7 +12,9 @@ spec:
   region: us-central1
   ipAddresses:
   - type: PRIVATE
-    ipAddress: 10.128.255.255
+    # update this to whatever IP you want or need
+    # don't forget to update it in the common.runtime.properties!
+    ipAddress: change-me
   settings:
     tier: db-custom-1-3840
     storageAutoResize: true

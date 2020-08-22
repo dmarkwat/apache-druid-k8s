@@ -4,3 +4,21 @@
   value:
     name: druiddata
     mountPath: /var/druid
+- op: add
+  path: /spec/template/spec/volumes/-
+  value:
+    name: druiddata
+    persistentVolumeClaim:
+      claimName: shared
+- op: replace
+  path: /spec/template/spec/initContainers
+  value:
+  - name: data-owner
+    image: apache/druid:0.19.0
+    command: [chown, -R, 1000:1000, /var/druid]
+    securityContext:
+      privileged: true
+      runAsUser: 0
+    volumeMounts:
+    - name: druiddata
+      mountPath: /var/druid

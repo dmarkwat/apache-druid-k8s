@@ -7,5 +7,6 @@ configMapGenerator:
   files:
   - common.runtime.properties
   - log4j2.xml
+  - druid-exporter.json
 patchesStrategicMerge:
 - patch.yml

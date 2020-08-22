@@ -3,8 +3,13 @@
   value:
     name: exporter
     image: wikimedia/druid_exporter
-    args: ["-d"]
+    imagePullPolicy: IfNotPresent
+    args: ["-d", "/conf/druid-exporter.json"]
     ports:
     - name: http-exporter
       containerPort: 8000
       protocol: TCP
+    volumeMounts:
+    # see common_config.yml for reference
+    - name: common
+      mountPath: /conf
