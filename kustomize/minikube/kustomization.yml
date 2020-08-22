@@ -17,6 +17,10 @@ patches:
 - target:
     kind: StatefulSet
     labelSelector: app notin (zk,postgresql)
+  path: pod_sec.yml
+- target:
+    kind: StatefulSet
+    labelSelector: app notin (zk,postgresql)
   path: shared_volume.yml
 - target:
     kind: StatefulSet
@@ -28,6 +32,7 @@ patches:
   path: exporter.yml
 images:
 - name: apache/druid
-  newTag: latest
+  newTag: 0.19.0
 - name: wikimedia/druid_exporter
-  newTag: git-0be5f54
+  newTag: latest
+  newName: druid-exporter

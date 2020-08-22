@@ -52,9 +52,7 @@ spec:
             memory: 2G
             cpu: 750m
         args:
-        - -c
-        - /druid/conf/mounted/service/historical/supervise.conf
-        - --stdout
+        - historical
         ports:
         - name: historical
           containerPort: 8083

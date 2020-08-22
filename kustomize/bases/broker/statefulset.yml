@@ -52,9 +52,7 @@ spec:
             memory: 1G
             cpu: 750m
         args:
-        - -c
-        - /druid/conf/mounted/service/broker/supervise.conf
-        - --stdout
+        - broker
         ports:
         - name: broker
           containerPort: 8082

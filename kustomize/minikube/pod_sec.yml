@@ -1,0 +1,8 @@
+---
+- op: replace
+  path: /spec/template/spec/securityContext
+  value:
+    # all values derived from uid set by upstream druid image
+    fsGroup: 1000
+    runAsUser: 1000
+    runAsGroup: 1000

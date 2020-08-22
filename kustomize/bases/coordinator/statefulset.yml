@@ -48,9 +48,7 @@ spec:
       - name: service
         image: apache/druid
         args:
-        - -c
-        - /druid/conf/mounted/service/coordinator/supervise.conf
-        - --stdout
+        - coordinator
         resources:
           requests:
             memory: 512m
