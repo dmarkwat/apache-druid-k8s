@@ -12,6 +12,6 @@ RUN curl -Lo source.zip https://github.com/wikimedia/operations-software-druid_e
       && cd operations-software-druid_exporter-* \
       && python3 setup.py install
 
-RUN apt-get remove -y python3-setuptools python3-pip curl unzip
+RUN apt-get remove -y python3-pip curl unzip
 
 ENTRYPOINT ["druid_exporter"]
