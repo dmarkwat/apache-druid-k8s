@@ -69,8 +69,12 @@ Happy Druid-ing(?)!
 *This was sadly tested some time ago on an older version of druid, and while the manifests and kustomizations should be in line with minikube, some breakage may be encountered.*
 
 So you wanna do this for real, huh?
+Who wouldn't?!
+Running this on a cloud platform makes it infinitely (theoretically, certainly) scalable: all the data and logs are stored in an object store, leaving cpu and memory as the only components we need to truly plan for.
+And with features like [horizontal pod autoscaling](https://cloud.google.com/kubernetes-engine/docs/concepts/horizontalpodautoscaler) and [cluster autoscaling](https://cloud.google.com/kubernetes-engine/docs/concepts/cluster-autoscaler), the system need not waste your money when you aren't flexing it hard.
+And beyond that, Druid handles the rest and has robust configurations for many use cases even in its incubtating state.
 
-Well you asked for it; +prepare for the worst because+...nah it's pretty easy.
+Well, you asked for it; +prepare for the worst because+...nah it's pretty easy.
 But that said there are definitely some requirements up front (and one recommendation):
 1. [Config Connector](https://cloud.google.com/config-connector/docs/how-to/install-upgrade-uninstall) is deployed in the cluster and has the appropriate permissions to manage Cloud SQL Instances and GCS Buckets
   - (unless Config Connector has evolved since I last encountered this, I _strongly_ recommend using a curated IAM Role and not simply giving the Config Connector blanket admin access to the project; however, your situation may allow for such configurations)
@@ -79,20 +83,25 @@ But that said there are definitely some requirements up front (and one recommend
 
 How these are deployed is entirely up to you, but they are required for the given kustomization in this repo.
 To untangle any of that, one simply needs to (either or both if Config Connector or Workload Identity aren't in use):
-- Create the Postgres instance manually or via API and remove the `SqlInstance` and other config connector resource references from the gke kustomization
+- Create the Postgres instance manually (there's a wonderful [helm chart](https://hub.helm.sh/charts/bitnami/postgresql) for this) or via API and remove the `SqlInstance` and other config connector resource references from the gke kustomization
+- Create the GCS Bucket manually or via API and similarly remove the associated config connector resources from the gke kustomization (`StorageBucket`)
 - Use a generated GCP Service Account JSON key and a K8s secret with env var wiring for `GOOGLE_APPLICATION_CREDENTIALS` in all the workloads that talk to the indexing and logging backends (kind of all of them except maybe the router?)
 
 Recommendation:
-- The GKE cluster this was deployed to and tested against is a Private Cluster which means nearly-zero wire connectivity to and from the outside world. I'm a personal advocate of private clusters, but it's not strictly required here. However, to get access to the deployed instances and LBs (they should all be Internal L4 LBs), you will need to find your way onto a network with visibility to either the Service IP alias range (a VPC peered with the GKE VPC) or the k8s master (the GKE VPC itself).
+- The GKE cluster this was deployed to and tested against is a [Private Cluster](https://cloud.google.com/kubernetes-engine/docs/concepts/private-cluster-concept) which means nearly-zero wire connectivity to and from the outside world. I'm a personal advocate of private clusters, but it's not strictly required here. However, to get access to the deployed instances and LBs (they should all be Internal L4 LBs), you will need to find your way onto a network with visibility to either the Service IP alias range (a VPC peered with the GKE VPC) or the k8s master (the GKE VPC itself). You can do this with VPNs, tools like [sshuttle](https://github.com/sshuttle/sshuttle) and jump servers, or even [Cloud Shell](https://cloud.google.com/shell) if you really like/trust/enjoy that experience.
 
 And with that out of the way we're ready to get started!
 
 ### Build and prepare
 
-Build and push the docker image for the druid exporter:
+Building isn't required as [quay.io](https://quay.io/repository/dmarkwat/wikimedia-druid-exporter?tab=tags) is nice enough to offer to build the exporter at no charge.
+You can use the repo, `quay.io/dmarkwat/wikimedia-druid-exporter`, and whichever tag or digest you prefer.
+(Bear in mind, this isn't a versioned repo--digests are therefore recommended).
+
+But in the event you want to build and host this yourself:
 ```bash
 # update with whatever docker repo of your choosing
-TAG=gcr.io/my-project-here/druid-exporter:latest
+TAG=gcr.io/your-project-here/druid-exporter:latest
 
 # must specify the tag for any push to be meaningful
 make build TAG=$TAG
@@ -101,7 +110,7 @@ make build TAG=$TAG
 docker push $TAG
 ```
 
-Find all the things that need changing:
+Then, find all the things that need changing:
 ```bash
 grep -R 'change-me' kustomize/gke
 ```
@@ -114,7 +123,7 @@ Among the `change-me`s you'll find are things like:
 - druid exporter name and digest
 
 There should hopefully be enough context or comments inline to aid with the values these should be set to.
-And bear in mind this is only a few of the required elements; things like JVM tuning, etc. can be found in various `jvm.config` or other files.
+And bear in mind this is only a few of the required elements; things like JVM tuning, etc. can be found in various `jvm.config` or other files and will be required for expert or production-grade tuning.
 
 Lastly, don't forget the IAM bindings.
 While the `SqlInstance` and `StorageBucket`s are all in here, the IAM configurations are not!

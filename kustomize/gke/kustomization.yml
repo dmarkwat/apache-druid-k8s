@@ -35,5 +35,5 @@ images:
   newTag: 0.19.0
 - name: wikimedia/druid_exporter
   # update these with whatever was published to the docker repo
-  newDigest: sha256:change-me
-  newName: change-me
+  digest: sha256:9498d7ac6a2aab4ff71fb707f707e85fd7ba364c70b8f8191129c15f329ec595
+  newName: quay.io/dmarkwat/wikimedia-druid-exporter
